@@ -34,12 +34,13 @@ tests/test_timing.c 8 casos de timing do PIO contra a ATA-3
 tests/test_imgread.c 10 casos de GDI
 tests/test_cue.c   12 casos de CUE
 tests/test_sniffer.c 12 casos do sniffer (doc 16)
+tests/test_l1.c    7 casos do esqueleto L1 (decode + despacho + PIO)
 ```
 
 ## Correr
 
 ```sh
-make test      # 434 checks em seis suites
+make test      # 504 checks em sete suites
 make asan      # o mesmo, com AddressSanitizer + UBSan (recompila de raiz)
 make firmware  # firmware RP2350B real (.uf2)
 make clean
@@ -169,13 +170,13 @@ com o loopback PIO-a-PIO descrito no doc 11 §5.
 | L2 task file | ✅ 28 casos |
 | L3 SPI | ✅ 16 comandos + 0x70/0x71, valores de resposta conferidos contra a referência |
 | L4 CD-DA + subcode | ✅ 11 casos: 4 formatos, CRC, BCD vs binário, avanço temporal |
-| L1 PIO | ⬜ não iniciado |
+| L1 PIO | Esqueleto comentado (7 casos): decode Tabela 3.1, despacho L2, PIO slow-path. Sem silício. |
 | L5 GDI | ✅ 10 casos. Leitor completo, `end_fad`, TOC por área, validação |
 | L5 CUE | ✅ 12 casos. Multi-Cue do Redump + TOSEC com PREGAP |
 | `cue2gdi` | ✅ ferramenta. Round-trip testado CUE → GDI → releitura |
 | `GetBaseFAD() = 45150` | ✅ em `gd_format.h`, alimentado pelo GDI/CUE |
 
-**434 checks, 0 falhas, limpo sob ASan+UBSan** (94+39+31+64+100+106).
+**504 checks, 0 falhas, limpo sob ASan+UBSan** (94+39+31+64+100+106+70).
 
 ## O que o estudo do Flycast mudou
 

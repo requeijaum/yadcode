@@ -6,7 +6,7 @@ documentação pública não fecha.
 
 ## Estado
 
-- **434 checks, 0 falhas**, limpo sob ASan+UBSan (94+39+31+64+100+106).
+- **504 checks, 0 falhas**, limpo sob ASan+UBSan (94+39+31+64+100+106+70).
 - Firmware RP2350B compila (`dreamcast_gdrom.uf2`, alvo confirmado).
 - **Sem validação em silício**: não há placa. O PIO, o ring, a análise
   e o firmware compilam e são testados em simulação, mas nunca correram
@@ -18,7 +18,7 @@ documentação pública não fecha.
 fw/            firmware + núcleo portátil + testes + ferramentas
   src/         task file, SPI, CD-DA, GDI/CUE, sniffer, main RP2350B
   pio/         g1_timing.pio (ciclos ATA-3) e g1_sniff.pio (captura)
-  tests/       seis suites de host, sem hardware
+  tests/       sete suites de host, sem hardware
   tools/       cue2gdi, gdsniff, interpretador de PIO (pio_vm)
 docs/          índice (README.md) + estudos: protocolo, G1, timings, referências, formatos
 ```
@@ -37,7 +37,7 @@ repo**: são 130 MB para consulta local. Para reproduzir, ver
 
 ```sh
 cd fw
-make test      # 434 checks em seis suites
+make test      # 504 checks em sete suites
 make asan      # o mesmo, com AddressSanitizer + UBSan (recompila de raiz)
 make tools     # cue2gdi + gdsniff
 make firmware  # firmware RP2350B real (.uf2 em fw/build-rp/)

@@ -50,6 +50,8 @@ include_directories(src)
 add_executable(dreamcast_gdrom
     src/fw_main.c
     src/sniffer.c
+    src/gd_l1.c
+    src/gd_l1_hw.c
 )
 
 # pico_generate_pio_header precisa do target ja' criado.

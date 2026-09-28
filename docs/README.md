@@ -17,7 +17,7 @@ correctamente o firmware — e saber o que ainda é desconhecido.
 | **Hardware** | Nenhum. Nenhuma placa comprada. |
 | **Firmware** | Compila para RP2350B (`fw/build-rp/dreamcast_gdrom.uf2`). Nunca correu em silício. |
 | **Documentos** | 17 |
-| **Código** | `fw/` — 434 checks, firmware RP2350B, leitor de GDI e CUE, ferramentas `cue2gdi` e `gdsniff` |
+| **Código** | `fw/` — 504 checks, firmware RP2350B, leitor de GDI e CUE, ferramentas `cue2gdi` e `gdsniff` |
 | **Data** | 2026-09-28 |
 
 ## 2. Índice
@@ -40,7 +40,7 @@ correctamente o firmware — e saber o que ainda é desconhecido.
 | 12 | [Correções ao briefing](12-correcoes-ao-briefing.md) | 34 correcções, para não voltarmos a propagar |
 | 13 | [Estudo do Flycast](13-estudo-flycast.md) | 15 diferenças encontradas, 7 questões ainda abertas (5 só com hardware) |
 | 15 | [Formatos de imagem GD](15-formatos-imagem-gd.md) | GDI e CUE, a armadilha do LBA 45000 vs FAD 45150, CUE→GDI |
-| **fw/** | [Núcleo do emulador](../fw/README.md) | **Código.** 434 checks em seis suites, firmware RP2350B, Apache-2.0 |
+| **fw/** | [Núcleo do emulador](../fw/README.md) | **Código.** 504 checks em sete suites, firmware RP2350B, Apache-2.0 |
 | **fw/pio/** | [Programa PIO do G1](../fw/pio/g1_timing.pio) | Timing ATA-3 provado por interpretador |
 
 > `ref/` (ex.: Flycast clonado, GPL-2.0, só referência) **não vai para o

@@ -16,10 +16,10 @@ CORE    := src/gd_taskfile.c src/gd_spi.c src/gd_cdda.c
 SIM     := tools/hostsim.c tools/memdisc.c
 IMGL    := src/gd_fs.c src/gd_gdi.c src/gd_cue.c
 SNIFF   := src/sniffer.c
-SNIFC   := $(SNIFF) tools/pio_vm.c
-TESTS   := tests/test_spec.c tests/test_cdda.c tests/test_timing.c tests/test_imgread.c tests/test_cue.c tests/test_sniffer.c
+L1L     := src/gd_l1.c
+TESTS   := tests/test_spec.c tests/test_cdda.c tests/test_timing.c tests/test_imgread.c tests/test_cue.c tests/test_sniffer.c tests/test_l1.c
 
-BINS    := build/test_spec build/test_cdda build/test_timing build/test_imgread build/test_cue build/test_sniffer
+BINS    := build/test_spec build/test_cdda build/test_timing build/test_imgread build/test_cue build/test_sniffer build/test_l1
 TOOLS   := build/cue2gdi build/gdsniff
 
 .PHONY: all test clean asan firmware tools
@@ -61,6 +61,10 @@ build/test_cue: $(IMGL) tests/test_cue.c | build
 build/test_sniffer: $(SNIFF) tools/pio_vm.c tests/test_sniffer.c | build
 	$(CC) $(CFLAGS) -o $@ $^
 
+# O teste do L1 usa o harness do hostsim (CORE+SIM), como o test_spec.
+build/test_l1: $(L1L) $(CORE) $(SIM) tools/pio_vm.c tests/test_l1.c | build
+	$(CC) $(CFLAGS) -o $@ $^
+
 build/cue2gdi: $(IMGL) tools/cue2gdi.c | build
 	$(CC) $(CFLAGS) -o $@ $^
 
@@ -76,6 +80,8 @@ test: $(BINS)
 	@./build/test_cue
 	@echo
 	@./build/test_sniffer
+	@echo
+	@./build/test_l1
 
 build/gdsniff: $(SNIFF) tools/gdsniff.c | build
 	$(CC) $(CFLAGS) -o $@ $^

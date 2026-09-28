@@ -1,0 +1,85 @@
+;
+; g1_dev.pio - Esqueleto do PHY G1 device-side (camada L1).
+;
+; ESTADO: ESQUELETO, NAO TESTADO EM SILICIO. Monta no pioasm e corre
+; no interpretador (fw/tools/pio_vm.c), mas nunca viu um Dreamcast.
+; Cada escolha duvidosa esta' marcada: [DOC-xx] = vem de documento,
+; [INFERRED] = deducao com motivo escrito, [UNKNOWN] = chute que o
+; hardware ha-de corrigir. Ver fw/src/gd_l1.h para a convencao.
+;
+; O QUE ESTE PROGRAMA FAZ (E O QUE NAO FAZ)
+; -----------------------------------------
+; Espera que o host seleccione o Command Block (/CS0 asserted),
+; amostra os pinos (DA + strobes + CS) de uma vez, empurra para a FIFO
+; e acorda a CPU. A descodificacao e a resposta vivem em C
+; (fw/src/gd_l1.c), nao aqui.
+;
+; Isto e' o SLOW PATH, deliberadamente: ir a C e voltar viola os
+; tempos t5 (20 ns) e t6 (5 ns) da ATA-3 PIO-3 [DOC-03 §Tabela 22].
+; Serve para o passo 2 do bring-up [DOC-08 §8] — PIO descodifica,
+; analisador logico nos pinos — com um host lento ou strobes manuais.
+; NAO serve para producao. Ver NOTA-FAST-PATH abaixo.
+;
+; NOTA-FAST-PATH (como a versao de producao deve ser, por inferencia)
+; -------------------------------------------------------------------
+; [INFERRED] A descodificacao tem de viver na PIO, porque 20 ns nao
+; chegam para um round-trip a C. O truque classico e' a jump table por
+; `mov exec, y`: poe-se (wr<<3 | da) em Y e o `mov exec, y` salta para
+; a entrada da tabela, uma por registo e direccao (16 entradas). Cada
+; entrada faz o acesso (in/out pins com a largura certa [DOC-01 §2.1])
+; e volta ao idle. Exige `.origin` fixo, porque o `exec` salta para
+; endereco absoluto [UNKNOWN: confirmar o `.origin` livre com o resto
+; dos programas na mesma PIO]. O Dreamdrive faz algo parecido; o
+; detalhe exacto nunca foi lido [DOC-05].
+;
+; PINOS (tem de bater com fw/src/sniffer.h e docs/02)
+; ---------------------------------------------------
+; GPIO 0..15  DD0..DD15 (bus de dados, bidireccional)
+; GPIO 16..18 DA0..DA2
+; GPIO 19     /CS0 (Command Block)
+; GPIO 20     /CS1 (Control Block: AltStatus/Device Control)
+; GPIO 21     /RD (DIOR-)
+; GPIO 22     /WR (DIOW-)
+; GPIO 23     IORDY (saida do device)
+; GPIO 24     INTRQ (saida do device)
+; GPIO 25     DMARQ (saida; so' se a questao C responder SIM)
+; GPIO 26     /DMACK (entrada; idem)
+; GPIO 27     /RESET (entrada; o host faz reset ao device)
+;
+; [DOC-02] /IOCS16, /PDIAG e /DASP sao NC no G1: nao existem aqui.
+; [DOC-01 §2.2] o device so' faz 16 bits, por isso o IOCS16 e' inutil.
+;
+.pio_version 1
+
+; ---------------------------------------------------------------------
+; g1_dev_slow: uma seleccao = um evento. O C faz o resto.
+; ---------------------------------------------------------------------
+.program g1_dev_slow
+
+idle:
+    ; [DOC-01 Tabela 3.1] tudo comeca com /CS0 asserted. O Control
+    ; Block (/CS1: AltStatus/Device Control) fica para uma segunda SM
+    ; [TODO-L1]: duplicar este programa com `wait 0 pin 20`, ou uma SM
+    ; por bloco. Uma SM so' consegue um `wait` de cada vez.
+    wait 0 pin 19            ; /CS0 asserted = host quer o Command Block
+
+    ; Amostra tudo de uma vez: DA2..DA0, /RD, /WR, /CS0, /CS1 e os
+    ; dados (para escritas). O C separa com gd_l1_decode().
+    mov x, pins
+    mov isr, x               ; o `push` empurra o ISR, nao o X (a licao
+                             ; do g1_trace secao 8c da doc 16 aplica-se)
+    push                     ; bloqueia se a FIFO encher: sem perda [DOC]
+
+    irq 0                    ; acorda a CPU (ver gd_l1_hw.c: a fonte
+                             ; IRQ0 tem de estar habilitada + clear no
+                             ; handler, senao reentra em ciclo)
+
+    ; [INFERRED] Espera o host largar /CS0 antes de rearmar. Sem isto,
+    ; com /CS0 ainda asserted o `wait 0` passava de imediato e a FIFO
+    ; enchia de repeticoes do mesmo acesso. O custo e' nao ver um
+    ; segundo acesso colado ao primeiro sem largar o CS — [UNKNOWN: o
+    ; host real larga sempre o CS entre acessos? A verificar no
+    ; analisador. Se nao, este `wait 1` tem de sair e a deduplicacao
+    ; passa para o C].
+    wait 1 pin 19
+    jmp idle

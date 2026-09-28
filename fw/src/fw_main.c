@@ -17,7 +17,9 @@
  *     de PIO de 4,7241 ns que o teste de timing assume.
  *
  * O nucleo portavel do emulador (gd_taskfile/gd_spi/gd_cdda) ainda nao
- * esta ligado: falta L1 completo e a placa.
+ * esta ligado: falta L1 completo e a placa. O ponto de partida e'
+ * src/gd_l1.* (esqueleto comentado: decode + despacho + PIO slow-path),
+ * ainda nao chamado a partir daqui.
  */
 #include <stdio.h>
 #include <math.h>
