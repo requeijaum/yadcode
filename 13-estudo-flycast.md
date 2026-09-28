@@ -185,5 +185,5 @@ Constantes que o `fw/` já tem:
 ---
 
 Ver também: [06b-scope-pio-vs-dma](06b-scope-pio-vs-dma.md) ·
-[09-riscos-e-licencas](09-riscos-e-licencas.md) · [fw/README.md](../fw/README.md) ·
+[09-riscos-e-licencas](09-riscos-e-licencas.md) · [fw/README.md](fw/README.md) ·
 [11-estrategia-de-validacao](11-estrategia-de-validacao.md)

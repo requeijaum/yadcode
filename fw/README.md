@@ -45,15 +45,6 @@ make firmware  # firmware RP2350B real (.uf2)
 make clean
 ```
 
-## Correr
-
-```sh
-make test      # 434 checks em seis suites
-make asan      # o mesmo, com AddressSanitizer + UBSan
-make firmware  # firmware RP2350B real (.uf2)
-make clean
-```
-
 ## Cadeia de ferramentas
 
 | Componente | Versão | Onde |

@@ -1,10 +1,11 @@
-# GD-ROM ODE para Dreamcast com RP2350 — directório de estudo
+# GD-ROM ODE para Dreamcast com RP2350 — estudo + firmware
 
 Estudo de engenharia para implementar um Optical Drive Emulator do Dreamcast com um
-Raspberry Pi RP2350B. **Fase 0 — sem hardware, sem firmware.**
+Raspberry Pi RP2350B, mais o firmware correspondente — ainda **sem validação em
+silício**: não há placa.
 
 Objectivo desta fase: fixar, com fontes primárias, tudo o que é necessário para escrever
-correctamente a primeira linha de firmware — e saber o que ainda é desconhecido.
+correctamente o firmware — e saber o que ainda é desconhecido.
 
 ---
 
@@ -12,15 +13,12 @@ correctamente a primeira linha de firmware — e saber o que ainda é desconheci
 
 | | |
 |---|---|
-| **Fase** | 0 — Estudo ✅ |
+| **Fase** | Firmware escrito e testado em simulação; por validar em hardware. |
 | **Hardware** | Nenhum. Nenhuma placa comprada. |
-| **Firmware** | Nenhum. Nenhuma linha escrita. |
-| **Documentos** | 14 |
+| **Firmware** | Compila para RP2350B (`fw/build-rp/dreamcast_gdrom.uf2`). Nunca correu em silício. |
+| **Documentos** | 17 |
 | **Código** | `fw/` — 434 checks, firmware RP2350B, leitor de GDI e CUE, ferramentas `cue2gdi` e `gdsniff` |
 | **Data** | 2026-09-28 |
-
-⚠️ **A fase 0 tem um fim.** O próximo passo tem de ser código (L3 SPI + testes golden
-contra o Flycast), não mais documento. Ver [11 §6](11-estrategia-de-validacao.md).
 
 ## 2. Índice
 
@@ -44,7 +42,9 @@ contra o Flycast), não mais documento. Ver [11 §6](11-estrategia-de-validacao.
 | 15 | [Formatos de imagem GD](15-formatos-imagem-gd.md) | GDI e CUE, a armadilha do LBA 45000 vs FAD 45150, CUE→GDI |
 | **fw/** | [Núcleo do emulador](fw/README.md) | **Código.** 434 checks em seis suites, firmware RP2350B, Apache-2.0 |
 | **fw/pio/** | [Programa PIO do G1](fw/pio/g1_timing.pio) | Timing ATA-3 provado por interpretador |
-| **ref/** | Flycast clonado | GPL-2.0. Só referência, nunca copiado |
+
+> `ref/` (ex.: Flycast clonado, GPL-2.0, só referência) **não vai para o
+> repo**: consulta local. Ver [07](07-referencias-codigo.md).
 
 ## 3. Os cinco achados que mais mudam o projecto
 

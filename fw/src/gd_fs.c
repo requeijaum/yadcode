@@ -9,7 +9,7 @@
  * O contexto (`ctx`) e' a raiz contra a qual os caminhos relativos do
  * GDI/CUE sao resolvidos. Nao e' preciso nenhum global: o chamador faz
  *
- *     gd_fs_t fs = gd_fs_stdio("/home/user/jogo");
+ *     gd_fs_t fs = gd_fs_stdio("/tmp/jogo");
  *     fs.open(fs.ctx, "track03.bin", &f);
  */
 struct gd_file {

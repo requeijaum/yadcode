@@ -27,7 +27,9 @@ TOOLS   := build/cue2gdi build/gdsniff
 # ---------------------------------------------------------------------------
 # Firmware real para RP2350B. Ver README.md para a cadeia de ferramentas.
 # ---------------------------------------------------------------------------
-PICO_SDK_PATH ?= /home/rafaelfrequiao/pico-sdk
+# Caminho do SDK: via ambiente, ou ~/pico-sdk por omissao. O CMake
+# falha com mensagem clara se nao existir (ver fw/CMakeLists.txt).
+PICO_SDK_PATH ?= $(HOME)/pico-sdk
 
 firmware:
 	cmake -B build-rp -S . -DCMAKE_BUILD_TYPE=Release

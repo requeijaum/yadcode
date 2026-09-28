@@ -280,4 +280,4 @@ partilharem exactamente o mesmo formato.
 
 Ver também: [13-estudo-flycast](13-estudo-flycast.md) ·
 [01-protocolo-spi-sega](01-protocolo-spi-sega.md) ·
-[fw/README.md](../fw/README.md)
+[fw/README.md](fw/README.md)
