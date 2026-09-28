@@ -10,7 +10,7 @@ documentação pública não fecha.
 - Firmware RP2350B compila (`dreamcast_gdrom.uf2`, alvo confirmado).
 - **Sem validação em silício**: não há placa. O PIO, o ring, a análise
   e o firmware compilam e são testados em simulação, mas nunca correram
-  num RP2350B nem contra um GD-ROM real. Ver `16-sniffer-g1.md` §8.
+  num RP2350B nem contra um GD-ROM real. Ver `docs/16-sniffer-g1.md` §8.
 
 ## Layout
 
@@ -20,13 +20,12 @@ fw/            firmware + núcleo portátil + testes + ferramentas
   pio/         g1_timing.pio (ciclos ATA-3) e g1_sniff.pio (captura)
   tests/       seis suites de host, sem hardware
   tools/       cue2gdi, gdsniff, interpretador de PIO (pio_vm)
-00-README.md   índice e estado global do projecto
-01-…16-*.md    estudos: protocolo, G1, timings, referências, formatos
+docs/          índice (README.md) + estudos: protocolo, G1, timings, referências, formatos
 ```
 
 `ref/` (clones de referência como o Flycast, GPL) **não vai para o
 repo**: são 130 MB para consulta local. Para reproduzir, ver
-`07-referencias-codigo.md`.
+`docs/07-referencias-codigo.md`.
 
 ## Pré-requisitos
 
@@ -48,14 +47,14 @@ Detalhes da cadeia e da metodologia em `fw/README.md`.
 
 ## Documentação
 
-Começar por `00-README.md` (índice), depois:
+Começar por `docs/README.md` (índice), depois:
 
-- `01-protocolo-spi-sega.md`, `02-barramento-g1-pinout.md`,
-  `03-timing-ide.md` — o hardware que se emula
-- `13-estudo-flycast.md` §7 — as sete questões em aberto (A–G);
+- `docs/01-protocolo-spi-sega.md`, `docs/02-barramento-g1-pinout.md`,
+  `docs/03-timing-ide.md` — o hardware que se emula
+- `docs/13-estudo-flycast.md` §7 — as sete questões em aberto (A–G);
   cinco (A, B, C, E, F) só se resolvem com hardware real
-- `16-sniffer-g1.md` — o sniffer: PIO de captura, análise e o que falta
-- `15-formatos-imagem-gd.md` — GDI/CUE, FAD/LBA, TOSEC
+- `docs/16-sniffer-g1.md` — o sniffer: PIO de captura, análise e o que falta
+- `docs/15-formatos-imagem-gd.md` — GDI/CUE, FAD/LBA, TOSEC
 
 ## Licença
 

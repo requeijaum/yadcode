@@ -1,6 +1,6 @@
 # `fw/` — núcleo do emulador GD-ROM
 
-**Licença: Apache-2.0.** Ver [../09-riscos-e-licencas.md §2.1](../09-riscos-e-licencas.md).
+**Licença: Apache-2.0.** Ver [../docs/09-riscos-e-licencas.md §2.1](../docs/09-riscos-e-licencas.md).
 
 Implementação do protocolo a partir da **spec Ver.1.30 da SEGA**, não a partir de código de
 terceiros. O iceGDROM é GPL-3.0, o MAME é GPL-2.0+ e o Linux é GPL-2.0 — todos foram lidos
@@ -159,7 +159,7 @@ referência. O simulador impõe a sequência da §7.1, o que significa que **um 
 passe estes testes produz a mesma sequência de transacções que um device correcto**.
 
 O que isto **não** valida: timing eléctrico. `t0` = 180 ns, `t5` = 20 ns, `tB` = 1250 ns
-(ver [../03-timing-ide.md](../03-timing-ide.md)) só se valida com um analisador lógico ou
+(ver [../docs/03-timing-ide.md](../docs/03-timing-ide.md)) só se valida com um analisador lógico ou
 com o loopback PIO-a-PIO descrito no doc 11 §5.
 
 ## Estado
@@ -180,7 +180,7 @@ com o loopback PIO-a-PIO descrito no doc 11 §5.
 ## O que o estudo do Flycast mudou
 
 15 diferenças de comportamento, todas corrigidas — ver
-[../13-estudo-flycast.md](../13-estudo-flycast.md). As que mais doeram:
+[../docs/13-estudo-flycast.md](../docs/13-estudo-flycast.md). As que mais doeram:
 
 - **`REQ_STAT` Byte 4 (Index) tem de ser `1`.** A spec não diz; um `0` faz o host achar que
   está antes do primeiro sector útil.

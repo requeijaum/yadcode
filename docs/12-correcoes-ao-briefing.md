@@ -66,6 +66,6 @@ Vale a pena registar, para não voltar a duvidar:
 
 ---
 
-Ver também: [00-README](00-README.md) ·
+Ver também: [README](README.md) ·
 [06b-scope-pio-vs-dma](06b-scope-pio-vs-dma.md) ·
 [09-riscos-e-licencas](09-riscos-e-licencas.md)
