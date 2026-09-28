@@ -54,6 +54,7 @@ Começar por `docs/README.md` (índice), depois:
 - `docs/13-estudo-flycast.md` §7 — as sete questões em aberto (A–G);
   cinco (A, B, C, E, F) só se resolvem com hardware real
 - `docs/16-sniffer-g1.md` — o sniffer: PIO de captura, análise e o que falta
+- `docs/17-l1-esqueleto.md` — o esqueleto L1: inferido vs desconhecido, impactos
 - `docs/15-formatos-imagem-gd.md` — GDI/CUE, FAD/LBA, TOSEC
 
 ## Licença

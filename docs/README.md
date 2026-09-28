@@ -16,7 +16,7 @@ correctamente o firmware — e saber o que ainda é desconhecido.
 | **Fase** | Firmware escrito e testado em simulação; por validar em hardware. |
 | **Hardware** | Nenhum. Nenhuma placa comprada. |
 | **Firmware** | Compila para RP2350B (`fw/build-rp/dreamcast_gdrom.uf2`). Nunca correu em silício. |
-| **Documentos** | 17 |
+| **Documentos** | 18 |
 | **Código** | `fw/` — 504 checks, firmware RP2350B, leitor de GDI e CUE, ferramentas `cue2gdi` e `gdsniff` |
 | **Data** | 2026-09-28 |
 
@@ -37,6 +37,7 @@ correctamente o firmware — e saber o que ainda é desconhecido.
 | 10 | [Viabilidade de pinos e PCB](10-viabilidade-pinos-e-pcb.md) | Porquê RP2350B e não Pico 2, a restrição do PIO 0–31, level shifting, conector |
 | 11 | [Estratégia de validação](11-estrategia-de-validacao.md) | Flycast como modelo de ouro, simulador de host, golden traces, PIO sniffer, loopback |
 | 16 | [Sniffer do barramento G1](16-sniffer-g1.md) | PIO de captura por mudança de estado, buffer circular, análise das perguntas A, B, C, E e F, analisador de PC |
+| 17 | [L1: esqueleto device-side](17-l1-esqueleto.md) | Decode Tabela 3.1, despacho L2, slow-path PIO; UNKNOWNs, impactos e guia de correcção |
 | 12 | [Correções ao briefing](12-correcoes-ao-briefing.md) | 34 correcções, para não voltarmos a propagar |
 | 13 | [Estudo do Flycast](13-estudo-flycast.md) | 15 diferenças encontradas, 7 questões ainda abertas (5 só com hardware) |
 | 15 | [Formatos de imagem GD](15-formatos-imagem-gd.md) | GDI e CUE, a armadilha do LBA 45000 vs FAD 45150, CUE→GDI |
