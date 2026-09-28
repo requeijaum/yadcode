@@ -1,0 +1,5 @@
+# Gerados pelo build de host
+fw/build/
+
+# Gerados pelo build do firmware (CMake + SDK)
+fw/build-rp/

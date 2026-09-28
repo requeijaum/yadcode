@@ -1,0 +1,131 @@
+;
+; g1_sniff.pio - Captura de transacoes do barramento G1.
+;
+; O PROBLEMA
+; ----------
+; 33 sinais a 180 ns por ciclo nao cabem na FIFO do PIO. A solucao
+; classica seria reduzir a taxa de amostragem, e ai perde-se tudo
+; exactamente na janela de interesse.
+;
+; A SOLUCAO
+; ---------
+; A maior parte do tempo o host esta parado. Em vez de amostrar e
+; guardar sempre, este programa so' emite um evento quando o ESTADO
+; DOS SINAIS MUDA. Isso reduz o caudal de eventos em ordens de
+; grandeza sem perder um unico acesso: toda a transacao comeca e acaba
+; com uma mudanca de estado.
+;
+;   mov y, pins      ; guarda o estado anterior
+;   mov isr, y       ; o `push` empurra o ISR, nao o Y
+;   push             ; estado inicial, para o host ter referencia
+; loop:
+;   mov x, pins      ; amostra
+;   jmp x != y, changed
+;   jmp loop         ; nada mudou: 3 instrucoes por varrimento
+; changed:
+;   mov isr, x       ; o evento
+;   push             ; pode bloquear se a FIFO encher - e' o que
+;                    ; limita a taxa sem perder eventos
+;   mov y, x
+;   irq 0            ; avisa a CPU
+;   jmp loop
+;
+; CUSTO
+; -----
+; Enquanto o bus esta parado, o programa corre a 3 instrucoes por
+; varrimento (`mov x, pins` + `jmp x != y` nao-tomado + `jmp loop`).
+; A 211,68 MHz isso e' 3 x 4,724 = 14,17 ns por ciclo de
+; varrimento. A janela de um strobe (80 ns) contem ~5,6 amostras, o
+; que chega para ver toda a transacao. Documentado em
+; test_sniffer.c, caso 72.
+;
+; PINOS
+; -----
+; GPIO 0..15  DD0..DD15 (bus de dados)
+; GPIO 16     DA0
+; GPIO 17     DA1
+; GPIO 18     DA2
+; GPIO 19     /CS0
+; GPIO 20     /CS1
+; GPIO 21     /RD  (DIOR-)
+; GPIO 22     /WR  (DIOW-)
+; GPIO 23     IORDY
+; GPIO 24     INTRQ
+; GPIO 25     DMARQ
+; GPIO 26     /DMACK
+; GPIO 27     /RESET
+;
+; A ordem e' propositada: os sinais estao contiguos, o que o PIO exige
+; (doc 10 §4). Nao e' o pinout final da placa; e' o pinout do
+; sniffer, que liga por catrao a um GD-ROM ou a uma placa de
+; interface.
+;
+; NOTA: o pioasm nao aceita `wait ... pins` (so' `wait ... pin N`).
+; Nao faz falta aqui.
+;
+.pio_version 1
+
+; ---------------------------------------------------------------------
+; g1_trace: eventos de registo, so' com mudanca de estado.
+; ---------------------------------------------------------------------
+.program g1_trace
+
+    mov y, pins            ; primeira amostra
+    mov isr, y             ; o `push` empurra o ISR, nao o Y: sem isto o
+                           ; evento inicial seria lixo (ISR = 0)
+    push                   ; e' o estado de repouso, para o host ancorar
+
+loop:
+    mov x, pins            ; 1 ciclo
+    jmp x != y, changed    ; 1 ciclo
+    jmp loop               ; o bus nao mudou
+
+changed:
+    mov isr, x
+    push                   ; bloqueia se a FIFO encher
+    mov y, x
+    irq 0                  ; a CPU recolhe
+    jmp loop
+
+.wrap
+
+; ---------------------------------------------------------------------
+; g1_sample: amostragem bruta, para medir tempo.
+;
+; Nao decide nada: empurra um evento por ciclo de execucao. A janela
+; tem de ser gerida pelo host (via IRQ), e o que interessa e' o
+; intervalo entre strobes - por isso nao ha `jmp x != y` aqui.
+; ---------------------------------------------------------------------
+.program g1_sample
+
+.wrap_target
+    mov isr, pins
+    push
+.wrap
+
+; ---------------------------------------------------------------------
+; g1_window: captura armada, disparada por um sinal do host.
+;
+; Diferenca em relacao a g1_sample: aqui o programa NAO empurra nada
+; ate o host dizer que se armou. Fica bloqueado num `wait` e so' depois
+; de o gatilho subir e' que a janela de captura existe.
+;
+; O gatilho e' o GPIO 28, que o host controla. Enquanto o sinal estiver
+; em baixo a SM esta' parada, e a FIFO fica vazia. Isso e' o que permite
+; armar a captura por software: o host sabe exactamente quando a janela
+; comecou, porque foi ele que a abriu.
+;
+; Uso pretendido: o host arme o gatilho, o sistema le o disco, e no
+; instante que lhe interessa o host abre a janela. O que sair da FIFO
+; e' o bus de dados em bruto, a partir desse instante.
+;
+; NOTA: este programa e' deliberadamente minimo e NAO esta' integrado no
+; firmware. Ver sniffer.c e a seccao 8 da doc 16.
+;
+; ---------------------------------------------------------------------
+.program g1_window
+
+    wait 1 pin 28        ; bloqueado ate o host abrir a janela
+    mov isr, pins
+    push
+.wrap

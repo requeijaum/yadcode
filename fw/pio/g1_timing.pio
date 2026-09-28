@@ -1,0 +1,86 @@
+;
+; g1_timing.pio - Ciclos de acesso de dados do barramento G1, com os
+;                atrasos da ATA-3 Tabela 22 (PIO mode 3) explicitos.
+;
+; Alvo: RP2350, sysclk 211,68 MHz (doc 04 §4.2b) => 4,725 ns/ciclo.
+;
+; NOTA: este pioasm nao tem directivas .pin nem .alias, so .define. Os
+; numeros de GPIO estao como literais. A versao final tem de os
+; parametrizar a partir de rp2350_pins.h, porque dependem da placa.
+;
+; Este programa NAO e' o drive completo. E' a parte que tem de estar
+; certa ao ciclo: o intervalo entre a borda do strobe e o momento em
+; que os dados sao aplicados ou amostrados. O decode de CS0/CS1/DA, a
+; FIFO e os registos vivem em C.
+;
+; Tabela 22 (PIO mode 3) em ns, e o que cada ciclo de 4,725 ns compra:
+;
+;   t3 = 30 ns  DIOW- data setup   30 / 4,725 = 6,35  =>  7 ciclos
+;   t4 = 10 ns  DIOW- data hold    10 / 4,725 = 2,12  =>  3 ciclos
+;   t5 = 20 ns  DIOR- data setup   20 / 4,725 = 4,23  =>  5 ciclos
+;   t6 =  5 ns  DIOR- data hold     5 / 4,725 = 1,06  =>  2 ciclos
+;   t0 =180 ns  ciclo total       180 / 4,725 = 38,1  => 38 ciclos
+;
+; Todos sao MINIMOS. Um host mais lento continua a ser legal (Nota 1
+; da spec): folga acima do minimo e' sempre segura, folga abaixo e'
+; violacao.
+;
+; DOIS ERROS JA COMETIDOS NESTA FICHA, CORRIGIDOS ABAIXO
+; ---------------------------------------------------
+; A primeira versao usava `nop [1]` para t6,_partindo de que um ciclo
+; bastava. A 211,68 MHz um ciclo sao 4,725 ns e t6 sao 5 ns: faltavam
+; 0,275 ns. Para a board, `nop [2]` = 9,45 ns.
+;
+; Um ciclo de 4,725 ns so serviria se o sysclock fosse >= 250 MHz
+; (4 ns... nao: >= 200 MHz daria exactly 5 ns, mas o RP2350 so garante
+; 150 MHz por spec e o maximo viavel e 228,57 MHz -> 4,375 ns, ainda
+; abaixo de 5 ns). Logo 2 ciclos sao obrigatorios em qualquer
+; configuracao valida do RP2350. Ver test_timing.c, caso 41.
+;
+.pio_version 1
+
+.program g1_read
+.side_set 1 opt
+
+; ---------------------------------------------------------------------
+; LEITURA: o host baixa /RD, o device conduz DD0-DD15.
+; ---------------------------------------------------------------------
+.wrap_target
+    wait 0 pin 19            ; CS0 (GPIO 19) nao asserted -> bloqueado
+read_cycle:
+    wait 0 pin 21            ; RD  (GPIO 21) asserted -> borda de descida
+
+    nop [5]                  ; t5: 5 x 4,725 = 23,63 ns   (min 20)
+    out pins, 16             ; aplicar a palavra no bus de dados
+
+    ; RESTRICAO DO PIO: num programa com .side_set o delay maximo de
+    ; uma instrucao e' 7, porque o side_set ocupa 1 dos 2 bits do
+    ; campo de delay. Um `nop [12]` nao assembla. Por isso a espera
+    ; longa e' expressa como duas instrucoes.
+    nop [7]                  ; manter no bus
+    nop [4]                  ; ... ate o host amostrar
+    wait 1 pin 21            ; RD sobe: o host acabou de amostrar
+    nop [2]                  ; t6: 2 x 4,725 =  9,45 ns   (min  5)
+    in pins, 16              ; fim do ciclo; o bus volta a ser entrada
+
+.wrap
+
+.program g1_write
+.side_set 0 opt
+
+; ---------------------------------------------------------------------
+; ESCRITA: o host conduz DD0-DD15 e baixa /WR.
+; ---------------------------------------------------------------------
+.wrap_target
+    wait 0 pin 19            ; CS0
+write_cycle:
+    wait 0 pin 22            ; WR (GPIO 22) asserted -> borda de descida
+
+    nop [7]                  ; t3: 7 x 4,725 = 33,08 ns   (min 30)
+    in pins, 16              ; amostrar a palavra
+
+    wait 1 pin 22            ; WR sobe: o host largou o bus
+    nop [3]                  ; t4: 3 x 4,725 = 14,18 ns   (min 10)
+    in pins, 16              ; reamostrar, para libertar o bus
+
+.wrap
