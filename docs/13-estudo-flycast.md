@@ -131,8 +131,16 @@ A referência implementa `return ~crc`, isto é, com complemento final. O XMODEM
 pelos jogos, importa.
 
 **Mantida a variante do GD-ROM**, porque é o comportamento observado em hardware. Registada
-como questão **F** — só um dump de um drive real a resolve. O teste 29 fixa as duas
-constantes lado a lado para que uma mudança de decisão seja visível.
+como questão **F**.
+
+**Actualização 2026-09-28** ([20](20-shinobi-crc-subcode.md)): o `shinobi.elf.lib` do
+Katana SDK **confirma a variante do GD-ROM** e dá-lhe a razão. O polinómio é `0x1021`
+(CRC-CCITT), o `init` é `0xFFFF` e há **complemento final** (`fmcalccrc`, offset `0x2c`:
+`not r0,r0` seguido de `extu.w`). Ou seja: é o XMODEM com `init` e `NOT` — exactamente a
+distinção que o texto acima descreve. A tabela foi extraída e verificada 256/256, e o
+algoritmo está em `fw/src/gd_crc.c` (casos 97–101).
+
+Falta apenas a **medição** para fechar por completo: o `docs/16` §8.
 
 ---
 
@@ -166,10 +174,17 @@ Constantes que o `fw/` já tem:
 | C | O host real usa DMA? | **Sniffer.** [06b](06b-scope-pio-vs-dma.md) |
 | D | `GET_SCD` formato 2/3 é usado por algum jogo? | Testar jogos com CD-DA |
 | E | `GD_LEADOUT_FAD = 549300` é universal? | GDI real de alta densidade |
-| **F** | **CRC do subcode: XMODEM ou a variante complementada?** | **Dump de um drive real** |
+| **F** | ~~CRC do subcode~~ **RESOLVIDA** | **A variante complementada**: `0x1021`, init `0xFFFF`, NOT final. [20](20-shinobi-crc-subcode.md) §7. Falta medir |
 | G | `GetBaseFAD() = 45150` — usado pela BIOS como? | Dump do BIOS + rastreio |
+| **H** | **O device select `0x90`/`0xB0` deve fazer o drive deixar de responder?** | **Documentado, não implementado.** Ver [19 §5](19-kos-e-reversao-da-bios.md) |
 
-**Cinco das sete só se resolvem com hardware.** Ver [11 §4.1](11-estrategia-de-validacao.md).
+**Cinco das seis que restam só se resolvem com hardware** — F resolvida pelo SDK, A/B/C/D/E/G por outro caminho. Ver [11 §4.1](11-estrategia-de-validacao.md).
+
+A **H** apareceu depois: o KallistiOS documenta que o GD-ROM não aceita
+os bits reservados no device select, e o firmware actual é internamente
+inconsistente a esse respeito ([19 §5](19-kos-e-reversao-da-bios.md)). A
+questão **C** ficou *estreitada* — a BIOS de retail não toca em
+`SB_G1GDRC`, o que aponta para PIO por omissão, mas não a fecha.
 
 ---
 

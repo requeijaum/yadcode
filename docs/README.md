@@ -16,8 +16,8 @@ correctamente o firmware — e saber o que ainda é desconhecido.
 | **Fase** | Firmware escrito e testado em simulação; por validar em hardware. |
 | **Hardware** | Nenhum. Nenhuma placa comprada. |
 | **Firmware** | Compila para RP2350B (`fw/build-rp/dreamcast_gdrom.uf2`). Nunca correu em silício. |
-| **Documentos** | 18 |
-| **Código** | `fw/` — 504 checks, firmware RP2350B, leitor de GDI e CUE, ferramentas `cue2gdi` e `gdsniff` |
+| **Documentos** | 24 |
+| **Código** | `fw/` — 517 checks em oito suites, firmware RP2350B, leitor de GDI e CUE, CRC do subcode, ferramentas `cue2gdi` e `gdsniff` |
 | **Data** | 2026-09-28 |
 
 ## 2. Índice
@@ -41,11 +41,15 @@ correctamente o firmware — e saber o que ainda é desconhecido.
 | 12 | [Correções ao briefing](12-correcoes-ao-briefing.md) | 34 correcções, para não voltarmos a propagar |
 | 13 | [Estudo do Flycast](13-estudo-flycast.md) | 15 diferenças encontradas, 7 questões ainda abertas (5 só com hardware) |
 | 15 | [Formatos de imagem GD](15-formatos-imagem-gd.md) | GDI e CUE, a armadilha do LBA 45000 vs FAD 45150, CUE→GDI |
-| **fw/** | [Núcleo do emulador](../fw/README.md) | **Código.** 504 checks em sete suites, firmware RP2350B, Apache-2.0 |
+| 19 | [KOS e reversão da BIOS](19-kos-e-reversao-da-bios.md) | A BIOS não tem o driver: vai por syscalls. Os dois namespaces de comando; device select; porquê o recomp 1:1 é impossível |
+| 20 | [Shinobi.lib: o CRC do subcode](20-shinobi-crc-subcode.md) | **Fecha a questão F**: polinómio `0x1021`, init `0xFFFF`, NOT final. Tabela extraída e verificada |
+| 21 | [A superficie de syscalls GDC](21-gdc-syscalls.md) | A biblioteca da Sega tambem faz syscalls, nao acede a registos. Tabela 0-10 confirmada; W2 stub |
+| 22 | [Porque os rotulos nao chegam ao C](22-porque-os-rotulos-nao-chegam-ao-c.md) | O loader nao acede aos registos G1: vai por syscalls. Diagnostico do W3 |
+| 23 | [A tabela de syscalls nos discos de retail](23-gdrom-syscall-table.md) | Byte-identica em 4 de 5 discos; a cadeia de boot correcta, com a prova |
+| 24 | [Engenharia reversa: onde esta e como repetir](24-ghidra-re.md) | Ghidra com SH4, onde esta cada artefacto, e as seis armadilhas |
 | **fw/pio/** | [Programa PIO do G1](../fw/pio/g1_timing.pio) | Timing ATA-3 provado por interpretador |
 
 > `ref/` (ex.: Flycast clonado, GPL-2.0, só referência) **não vai para o
-> repo**: consulta local. Ver [07](07-referencias-codigo.md).
 
 ## 3. Os cinco achados que mais mudam o projecto
 

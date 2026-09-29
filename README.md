@@ -6,7 +6,7 @@ documentação pública não fecha.
 
 ## Estado
 
-- **504 checks, 0 falhas**, limpo sob ASan+UBSan (94+39+31+64+100+106+70).
+- **517 checks, 0 falhas**, limpo sob ASan+UBSan (94+39+31+64+100+106+70+13).
 - Firmware RP2350B compila (`dreamcast_gdrom.uf2`, alvo confirmado).
 - **Sem validação em silício**: não há placa. O PIO, o ring, a análise
   e o firmware compilam e são testados em simulação, mas nunca correram
@@ -37,7 +37,7 @@ repo**: são 130 MB para consulta local. Para reproduzir, ver
 
 ```sh
 cd fw
-make test      # 504 checks em sete suites
+make test      # 517 checks em oito suites
 make asan      # o mesmo, com AddressSanitizer + UBSan (recompila de raiz)
 make tools     # cue2gdi + gdsniff
 make firmware  # firmware RP2350B real (.uf2 em fw/build-rp/)
@@ -51,11 +51,13 @@ Começar por `docs/README.md` (índice), depois:
 
 - `docs/01-protocolo-spi-sega.md`, `docs/02-barramento-g1-pinout.md`,
   `docs/03-timing-ide.md` — o hardware que se emula
-- `docs/13-estudo-flycast.md` §7 — as sete questões em aberto (A–G);
+- `docs/13-estudo-flycast.md` §7 — as questões em aberto (A–H)
   cinco (A, B, C, E, F) só se resolvem com hardware real
 - `docs/16-sniffer-g1.md` — o sniffer: PIO de captura, análise e o que falta
 - `docs/17-l1-esqueleto.md` — o esqueleto L1: inferido vs desconhecido, impactos
 - `docs/15-formatos-imagem-gd.md` — GDI/CUE, FAD/LBA, TOSEC
+- `docs/19-kos-e-reversao-da-bios.md` — o que a BIOS e o KOS revelam: o
+  driver de GD-ROM está no `IP.BIN`, não na BIOS
 
 ## Licença
 

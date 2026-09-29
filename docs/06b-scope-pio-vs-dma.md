@@ -157,6 +157,15 @@ controlo G1, ver [02 §3](02-barramento-g1-pinout.md)), escrito com `0x00001001`
 "equivalent to Multi Word-DMA Mode 2". Isto é consistente com o layout de um registo de
 timing G1: os bits altos dão o número de waits, os baixos o modo.
 
+Evidência nova (2026-09-28): a BIOS de retail **não toca** neste registo —
+`0x005F74A0` ocorre **zero vezes** no dump, contra 3402 constantes no P4/Holly
+([19 §2.3](19-kos-e-reversao-da-bios.md)). E o KallistiOS, que usa DMA por
+omissão, impõe **alinhamento de 32 bytes para DMA** contra 16 para PIO.
+
+Isto não fecha a questão C, mas reforça PIO como baseline do v1. E gera uma
+previsão testável: um programa compilado com KOS usaria DMA e não arrancaria
+num ODE só-PIO ([19 §3.3](19-kos-e-reversao-da-bios.md)).
+
 ---
 
 Ver também: [01-protocolo-spi-sega](01-protocolo-spi-sega.md) ·

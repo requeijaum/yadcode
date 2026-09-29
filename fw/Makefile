@@ -17,10 +17,10 @@ SIM     := tools/hostsim.c tools/memdisc.c
 IMGL    := src/gd_fs.c src/gd_gdi.c src/gd_cue.c
 SNIFF   := src/sniffer.c
 L1L     := src/gd_l1.c
-TESTS   := tests/test_spec.c tests/test_cdda.c tests/test_timing.c tests/test_imgread.c tests/test_cue.c tests/test_sniffer.c tests/test_l1.c
+TESTS   := tests/test_spec.c tests/test_cdda.c tests/test_timing.c tests/test_imgread.c tests/test_cue.c tests/test_sniffer.c tests/test_l1.c tests/test_crc.c
 
-BINS    := build/test_spec build/test_cdda build/test_timing build/test_imgread build/test_cue build/test_sniffer build/test_l1
-TOOLS   := build/cue2gdi build/gdsniff
+BINS    := build/test_spec build/test_cdda build/test_timing build/test_imgread build/test_cue build/test_sniffer build/test_l1 build/test_crc
+TOOLS   := build/cue2gdi build/gdsniff build/gd_systable
 
 .PHONY: all test clean asan firmware tools
 
@@ -65,6 +65,11 @@ build/test_sniffer: $(SNIFF) tools/pio_vm.c tests/test_sniffer.c | build
 build/test_l1: $(L1L) $(CORE) $(SIM) tools/pio_vm.c tests/test_l1.c | build
 	$(CC) $(CFLAGS) -o $@ $^
 
+# O teste do CRC usa a tabela e o algoritmo do subcode (docs/20).
+CRC     := src/gd_crctbl.c src/gd_crc.c
+build/test_crc: $(CRC) tests/test_crc.c | build
+	$(CC) $(CFLAGS) -I src -o $@ $^
+
 build/cue2gdi: $(IMGL) tools/cue2gdi.c | build
 	$(CC) $(CFLAGS) -o $@ $^
 
@@ -82,9 +87,14 @@ test: $(BINS)
 	@./build/test_sniffer
 	@echo
 	@./build/test_l1
+	@./build/test_crc
 
 build/gdsniff: $(SNIFF) tools/gdsniff.c | build
 	$(CC) $(CFLAGS) -o $@ $^
+
+# A tabela de syscalls GDC nos discos de retail (docs/23).
+build/gd_systable: tools/gd_systable.c | build
+	$(CC) $(CFLAGS) -o $@ $<
 
 tools: $(TOOLS)
 
