@@ -16,7 +16,30 @@
   medir em hardware.
 - **6 `1ST_READ.BIN`** extraídos de dumps de retail e decompilados
   (2193/2194 funções cada).
-- **517 checks**, oito suites, ASan+UBSan limpo.
+- **527 checks**, oito suites, ASan+UBSan limpo.
+
+### Fase C — os dois requisitos de arranque, no firmware (2026-09-29)
+
+`docs/26`. Não foi preciso hardware: o estudo do OpenGDEMU transformou "precisamos
+de medir" em "existe uma propriedade a impor no código".
+
+- 🟢 **IDENTIFY 64 → 512 bytes** (`GD_IDENTIFY_SIZE`). O ATAPI define 256 palavras;
+  64 era um subconjunto que fazia a BIOS ler lixo acima da palavra 31.
+  `GD_TOC_SIZE` (408) deixou de ser também a capacidade da buffer.
+- 🟢 **`0xEC` tem teste próprio.** Abortava por acidente, via `default:`. É
+  condição de arranque, não pode depender de um `switch` mal fechado.
+- 🟢 **CD_READ pré-bufferiza 18816 B** antes de o host puxar. Antes servia sector
+  a sector *durante* a transferência, o que punha a latência do meio de
+  armazenamento no caminho do DMA da BIOS — o bug dos 10 KB.
+- 🔴 **Bug latente encontrado pelo caminho:** a chave de cache `sec_fad` não
+  incluía `sec_size`, e um `CD_READ` de 2352 B servia os 2048 B do comando
+  anterior. O caso de teste dos sector sizes passava **pelo motivo errado** desde
+  que foi escrito. Corrigido, e o `memdisc` passou a servir 2340/2352.
+- **A sniffer continua sem placa.** O procedimento, a decisão de farejar do lado
+  do 3.3 V do GDEMU, e as perguntas corrigidas estão em `docs/26` §2-3.
+
+⚠️ **Continua por resolver:** a string de versão do `REQ_MODE` (firmware `5.07`,
+`docs/13` `6.43`, stock `6.42`) e o `REQ_MODE (0,10)`. Ver `docs/25` §7.
 
 ### Estudo do OpenGDEMU (2026-09-29) — `docs/25`
 
@@ -34,12 +57,11 @@ a única implementação **aberta** de hardware de GD-ROM.
   Evidência forte, mas o OpenGDEMU assume o DMA em vez de o medir.
 - 🟡 **Questão A estreitada:** 6 bytes é o mínimo que a BIOS aceita; o Flycast
   envia 1012 e a origem dessa diferença continua desconhecida.
-- ⚠️ **Divergências no nosso firmware** (nenhuma alterada — ver `docs/25` §6-7):
-  - IDENTIFY devolve **64 bytes**; o ATAPI manda **512**.
+- ⚠️ **Divergências do firmware** (IDENTIFY e CD_READ resolvidas na Fase C;
+  o resto continua — ver `docs/25` §6-7):
   - `REQ_MODE` (18,8) devolve `"Rev 5.07"` no firmware e `"Rev 6.43"` no `docs/13`;
     um GDEMU stock devolve **`"Rev 6.42"`**. Nenhum dos nossos está confirmado.
-  - `REQ_MODE` (0,10) stock = `[00 00 00 00 00 b4 19 00 00 08]` — não verificado
-    no nosso lado.
+  - `REQ_MODE` (0,10) stock = `[00 00 00 00 00 b4 19 00 00 08]` — não implementado.
   - `REQ_MODE` com offset/len inesperados: stock **aborta (0x50)**, o nosso responde.
   - `SET_MODE` usa `GD_PHASE_DATA_IN` para um transfer de escrita. Funciona por
     ordem de dispatch, não por desenho. Armadilha para refactors.
@@ -47,7 +69,7 @@ a única implementação **aberta** de hardware de GD-ROM.
 
 ## O que está bloqueado
 
-- **A, C, D, E, G** — hardware. Ver `docs/16` §8.
+- **A, C, D, E, G** — hardware. Ver `docs/26` §4.
 - **H** (device select) — decisão de firmware em espera. O OpenGDEMU não
   implementa, logo não ajuda.
 - **W3 / Fase 2** (nomes G1 no C) — não alcançável: o loader acede ao

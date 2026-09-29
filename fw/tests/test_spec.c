@@ -130,6 +130,51 @@ int main(void)
     }
 
     /* ---------------------------------------------------------------- */
+    CASE(5, "IDENTIFY: 512 bytes, o tamanho ATAPI (256 palavras)");
+    /*
+     * docs/25 §6. A ATA define IDENTIFY PACKET DEVICE como 256 palavras
+     * (512 bytes). Uma resposta menor e' um subconjunto: inofensiva se a
+     * BIOS ler pouco, mas se ela consultar palavras acima da 31 le lixo.
+     * 512 e' superseguro -- a BIOS le o Byte Count e decide.
+     */
+    hostsim_write_command(&hs, GD_CMD_IDDEV);
+    {
+        uint32_t wcount = 0;
+        uint16_t w;
+        while (gd_taskfile_data_pending(&hs.dev) && wcount < 256) {
+            gd_taskfile_read_data(&hs.dev, &w, 1);
+            wcount++;
+        }
+        CHECK(wcount == 256, "IDENTIFY devolveu %u palavras, esperado 256 (512 B)", wcount);
+        CHECK(gd_spi_buf_len == 512, "gd_spi_buf_len = %u, esperado 512",
+              gd_spi_buf_len);
+        /* O Byte Count e' little-endian nos registos, como manda a ATA. */
+        CHECK(hs.dev.reg[GD_R_BYTECOUNTL] == 0x00 &&
+              hs.dev.reg[GD_R_BYTECOUNTH] == 0x02,
+              "Byte Count = %02x%02x, esperado 0200 (512 LE)",
+              hs.dev.reg[GD_R_BYTECOUNTH], hs.dev.reg[GD_R_BYTECOUNTL]);
+    }
+
+    /* ---------------------------------------------------------------- */
+    CASE(5, "IDENTIFY: 0xEC aborta, como a ATA exige de um packet device");
+    /*
+     * docs/25 §4. Um packet device tem de abortar IDENTIFY DEVICE para
+     * que o host caia em IDENTIFY PACKET DEVICE. Sem isto a BIOS nao
+     * encontra o disco.
+     */
+    hostsim_write_command(&hs, 0xEC);
+    CHECK(hs.dev.reg[GD_R_ERROR] == GD_ERR_ABRT,
+          "0xEC nao abortou: Error = 0x%02x", hs.dev.reg[GD_R_ERROR]);
+    CHECK(hs.dev.reg[GD_R_ERROR] & 0x04, "bit ABRT (0x04) nao posto");
+    CHECK(!(gd_taskfile_data_pending(&hs.dev)),
+          "0xEC pôs DRQ: nao devia haver dados num comando abortado");
+    /* O abort deixa CHECK posto; um soft reset devolve a task file ao
+     * estado limpo, senao o caso seguinte herda o erro. */
+    hostsim_write_command(&hs, GD_CMD_SOFTRESET);
+    CHECK(!(hs.dev.reg[GD_R_STATUS] & GD_ST_CHECK),
+          "soft reset nao limpou CHECK");
+
+    /* ---------------------------------------------------------------- */
     CASE(6, "Comando 0xEF (SET FEATURES): so modo de transferencia");
     hostsim_write_control(&hs, GD_R_FEATURES, GD_FEAT_XFERMODE);
     hostsim_write_control(&hs, GD_R_BYTECOUNTL, GD_SC_MODE_PIO_DEFAULT);
@@ -252,7 +297,53 @@ int main(void)
     CHECK(resp[2] == 3, "primeira track da sessao 2 = %u, esperado 3", resp[2]);
 
     /* ---------------------------------------------------------------- */
-    CASE(14, "SPI 0x30 CD_READ: le o sector certo, byte a byte");
+    CASE(14, "CD_READ: os sectores ficam prontos ANTES de o host puxar");
+    /*
+     * docs/25 §5. O canal de DMA da BIOS aborta a ~10 KB se a drive nao
+     * tiver os dados quando o host comeca a puxar. O primeiro read da
+     * BIOS sao 7 sectores (14 KB, o IP.BIN). Se servirmos sector a sector
+     * enquanto o host le, a latencia do meio de armazenamento entra no
+     * caminho e o boot morre.
+     *
+     * Este teste mede a propriedade que importa: no instante em que o
+     * packet e' aceite, o disco ja foi lido por inteiro.
+     */
+    pkt_reset(p);
+    p[0] = GD_SPI_CD_READ;
+    p[1] = GD_READ_SEL_DATA;
+    pkt_set_fad(p, 0);
+    p[8] = 0; p[9] = 0; p[10] = 7;            /* 7 sectores = 14 KB */
+    {
+        uint32_t before = md.read_count;
+        uint32_t after_cmd;
+        int wi;
+        hostsim_write_command(&hs, GD_CMD_PACKET);
+        for (wi = 0; wi < 6; wi++)           /* 6 palavras = 12 bytes */
+            hostsim_write_data(&hs,
+                               (uint16_t)((p[wi * 2] << 8) | p[wi * 2 + 1]));
+        after_cmd = md.read_count;
+        /* Uma leitura de 7 sectores e' UMA chamada, nao sete. */
+        CHECK(after_cmd == before + 1,
+              "%u chamadas de leitura no comando, esperado 1 (leitura em bloco)",
+              after_cmd - before);
+        n = 0;
+        while (gd_taskfile_data_pending(&hs.dev) && n < 14 * 1024) {
+            uint16_t wd;
+            gd_taskfile_read_data(&hs.dev, &wd, 1);
+            n += 2;
+        }
+        CHECK(n == 7 * MEMDISC_SECTOR_SIZE,
+              "CD_READ de 7 sectores devolveu %u bytes, esperado %d", n,
+              7 * MEMDISC_SECTOR_SIZE);
+        /* O ponto do teste: puxar 14 KB nao pode tocar no disco. */
+        CHECK(md.read_count == after_cmd,
+              "o host leu %u sectores do disco durante a transferencia; "
+              "a latencia esta no caminho do DMA da BIOS",
+              md.read_count - after_cmd);
+    }
+
+    /* ---------------------------------------------------------------- */
+    CASE(15, "SPI 0x30 CD_READ: le o sector certo, byte a byte");
     pkt_reset(p);
     p[0] = GD_SPI_CD_READ;
     p[1] = GD_READ_SEL_DATA;                 /* 0x20: so Data, tipo FAD */

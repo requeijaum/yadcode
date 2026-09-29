@@ -41,7 +41,7 @@ typedef struct {
 gd_cdread_state_t *gd_spi_cdread_state(void);
 
 /* Buffers internos expostos para os testes. */
-extern uint8_t gd_spi_buf[GD_TOC_SIZE];
+extern uint8_t gd_spi_buf[GD_SPI_BUF_SIZE];
 extern uint32_t gd_spi_buf_len;
 
 #endif /* GD_SPI_H */

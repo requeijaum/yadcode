@@ -33,9 +33,18 @@ int memdisc_read_sectors(gd_disc_t *d, uint32_t fad, uint32_t n,
     if (md->fail_on >= 0 && (int)md->read_count == md->fail_on) return -1;
 
     for (i = 0; i < n; i++) {
-        if (sector_size != MEMDISC_SECTOR_SIZE) return -1;  /* so 2048 */
+        if (sector_size < MEMDISC_SECTOR_SIZE) return -1;
         if (fad + i >= MEMDISC_SECTORS) return -1;
-        memcpy((uint8_t *)dst + off, md->data[fad + i], sector_size);
+        /*
+         * 2048 vem do armazenamento. Acima disso (2340, 2352) geramos o
+         * sector completo a partir do mesmo padrao que memdisc_expected()
+         * usa nos testes, para que a comparacao continue valendo.
+         */
+        if (sector_size == MEMDISC_SECTOR_SIZE) {
+            memcpy((uint8_t *)dst + off, md->data[fad + i], sector_size);
+        } else {
+            memdisc_expected(fad + i, sector_size, (uint8_t *)dst + off);
+        }
         off += sector_size;
     }
     return 0;

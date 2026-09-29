@@ -254,6 +254,13 @@
 #define GD_MAX_TRACKS 99   /* tracks 1..99 na TOC, per Tabela 6.1 */
 #define GD_TOC_SIZE    408
 
+/* Identificar (0xA1) e' o unico comando com resposta maior que o GET_TOC:
+ * a ATA define IDENTIFY PACKET DEVICE como 256 palavras = 512 bytes.
+ * A buffer partilhada tem de aguentar o maior dos dois; o GET_TOC
+ * continua a anunciar os seus 408. Ver docs/25 §6. */
+#define GD_IDENTIFY_SIZE 512
+#define GD_SPI_BUF_SIZE  512
+
 /* Req_Mode: 32 bytes, standby time default 0x00B4 = 180 s */
 #define GD_REQMODE_SIZE 32
 #define GD_DEFAULT_STANDBY 0x00b4

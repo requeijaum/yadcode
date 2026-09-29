@@ -128,6 +128,9 @@ blob, e essa parte estava errada desde a formulação.
 `0xA1`. Se inverter, a BIOS não encontra o disco. Isto é comportamento de
 arranque, não um detalhe.
 
+> 🟢 **Resolvido em 2026-09-29.** Ver [26](26-sniff-gdemu-real.md) §1.1-1.2: o
+> IDENTIFY passou a 512 bytes e o abort de `0xEC` tem teste próprio.
+
 ---
 
 ## 5. O achado que não estava previsto: o DMA da BIOS tem timeout de ~10 KB
@@ -167,6 +170,11 @@ Não prova que uma GD-ROM real cacheie. Pode ser que tenha latência intrínseca
 que um cartão SD (µs de RAM contra ms de seek), e nesse caso o problema é do OpenGDEMU
 e não do conceito. A pergunta útil deixa de ser "que latência tem a drive" e passa a
 ser: **"consigo servir 14 KB sem stall?"** — e a resposta tem de ser sim, por desenho.
+
+> 🟢 **Resolvido em 2026-09-29, na direcção segura.** Ver [26](26-sniff-gdemu-real.md)
+> §1.3: o `CD_READ` passou a pré-bufferizar o pedido inteiro (18816 B) antes de o
+> host puxar, porque antes servia sector a sector **durante** a leitura. O teste
+> impõe a propriedade, não o resultado.
 
 ### Sobre a questão C (`o host real usa DMA?`)
 

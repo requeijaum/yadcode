@@ -48,6 +48,7 @@ correctamente o firmware — e saber o que ainda é desconhecido.
 | 23 | [A tabela de syscalls nos discos de retail](23-gdrom-syscall-table.md) | Byte-identica em 4 de 5 discos; a cadeia de boot correcta, com a prova |
 | 24 | [Engenharia reversa: onde esta e como repetir](24-ghidra-re.md) | Ghidra com SH4, onde esta cada artefacto, e as seis armadilhas |
 | 25 | [Estudo do OpenGDEMU](25-opengdemu-comportamento.md) | O quarto ODE, o timeout de 10 KB do DMA da BIOS, e o `0x71` estreitado a 6 bytes |
+| 26 | [Fase C: sniff de um GDEMU real](26-sniff-gdemu-real.md) | Os dois requisitos de arranque já no firmware, e o que a sniffer tem de perguntar |
 | **fw/pio/** | [Programa PIO do G1](../fw/pio/g1_timing.pio) | Timing ATA-3 provado por interpretador |
 
 > `ref/` (ex.: Flycast clonado, GPL-2.0, e OpenGDEMU, GPL-3.0, só referência)

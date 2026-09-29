@@ -11,7 +11,7 @@
 #include "gd_spi.h"
 #include "gd_cdda.h"
 
-uint8_t  gd_spi_buf[GD_TOC_SIZE];
+uint8_t  gd_spi_buf[GD_SPI_BUF_SIZE];
 uint32_t gd_spi_buf_len;
 
 static void buf_reset(void) { gd_spi_buf_len = 0; }
@@ -53,9 +53,19 @@ typedef struct {
     uint32_t fad;        /* proximo FAD a servir */
     uint32_t remaining;  /* sectores por servir */
     uint32_t sector_size;
+    uint32_t prebuf_len; /* bytes ja em cdread_buf, 0 = servir do disco */
 } cdread_state_t;
 
 static cdread_state_t cdread;
+
+/*
+ * Pre-buffer de CD_READ. Aguenta 8 sectores do maior tamanho possivel
+ * (2352 = sector cru): 18816 bytes. O arranque precisa de 7 (14 KB), com
+ * um sector de folga. Ver docs/25 §5.
+ */
+#define GD_CDREAD_BUF_BYTES (8 * 2352)
+static uint8_t  cdread_buf[GD_CDREAD_BUF_BYTES];
+
 
 int gd_spi_disc_readable(const gd_device_t *dev)
 {
@@ -132,11 +142,34 @@ static int src_cdread_open(gd_device_t *dev, uint16_t *bytecount)
     cdread.remaining = n;
 
     *bytecount = (uint16_t)(n * cdread.sector_size);
+
+    /*
+     * Pre-buffer. O canal de DMA da BIOS aborta a ~10 KB se a drive nao
+     * tiver os dados prontos quando o host comeca a puxar, e o primeiro
+     * read da BIOS sao 7 sectores (14 KB, o IP.BIN). Servir sector a
+     * sector durante a leitura do host punha a latencia do meio de
+     * armazenamento no caminho e matava o boot. Ver docs/25 §5.
+     *
+     * Le-se o pedido inteiro antes de o host poder puxar uma palavra.
+     * Acima do limite cai-se no caminho antigo, sector a sector: e' o
+     * comportamento de sempre, e o risco esta por confirmar para
+     * leituras maiores (docs/25 §9).
+     */
+    cdread.prebuf_len = 0;
+    if (n && n * cdread.sector_size <= GD_CDREAD_BUF_BYTES) {
+        if (dev->disc->read_sectors(dev->disc, cdread.fad, n,
+                                    cdread.sector_size, cdread_buf) == 0)
+            cdread.prebuf_len = n * cdread.sector_size;
+    }
     return 0;
 }
 
 static uint8_t  sec_cache[2352];
+/* A chave tem de incluir o sector_size: o mesmo FAD a 2048 e a 2352 sao
+ * contenus diferentes, e sem isto um CD_READ de 2352 servia os 2048 do
+ * comando anterior. */
 static uint32_t sec_fad = 0xffffffffu;
+static uint32_t sec_size = 0;
 
 static uint32_t src_cdread_read(gd_device_t *dev, uint16_t *dst, uint32_t nwords)
 {
@@ -145,16 +178,34 @@ static uint32_t src_cdread_read(gd_device_t *dev, uint16_t *dst, uint32_t nwords
 
     if (cdread.remaining == 0) return 0;
 
+    /* Caminho rapido: tudo o que foi pre-bufferizado. Sem disco no meio. */
+    if (cdread.prebuf_len) {
+        uint32_t done = dev->transferred;
+        if (done >= cdread.prebuf_len) return 0;
+        avail = cdread.prebuf_len - done;
+        if (avail > bytes) avail = bytes;
+        for (i = 0; i < avail; i++) {
+            uint8_t b = cdread_buf[done + i];
+            if (i & 1) dst[i / 2] = (uint16_t)(dst[i / 2] | b);
+            else       dst[i / 2] = (uint16_t)(dst[i / 2] | ((uint16_t)b << 8));
+        }
+        n = (avail + 1) / 2;
+        if (done + avail >= cdread.prebuf_len) cdread.remaining = 0;
+        return n;
+    }
+
     into  = dev->transferred % cdread.sector_size;
     avail = cdread.sector_size - into;
     if (avail > bytes) avail = bytes;
 
-    if (sec_fad != cdread.fad) {
+    if (sec_fad != cdread.fad || sec_size != cdread.sector_size) {
         if (dev->disc->read_sectors(dev->disc, cdread.fad, 1,
                                     cdread.sector_size, sec_cache) != 0) {
+            sec_fad = 0xffffffffu;   /* nao deixar cache envenenado */
             return 0;
         }
-        sec_fad = cdread.fad;
+        sec_fad  = cdread.fad;
+        sec_size = cdread.sector_size;
     }
 
     /* dst entra sempre limpo: ver gd_taskfile_read_data(). */
@@ -168,7 +219,8 @@ static uint32_t src_cdread_read(gd_device_t *dev, uint16_t *dst, uint32_t nwords
     if (avail == cdread.sector_size) {
         cdread.fad++;
         cdread.remaining--;
-        sec_fad = 0xffffffffu;
+        sec_fad  = 0xffffffffu;
+        sec_size = 0;
     }
     return n;
 }
@@ -524,6 +576,16 @@ void gd_spi_identify(gd_device_t *dev)
     resp_pack_ascii("GD-ROM DRIVE  ", 16);
     /* 0x30-0x3F: firmware, 16 ASCII */
     resp_pack_ascii("Rev 5.07      ", 16);
+    /*
+     * Bytes 0x40..0x1FF: a ATA define IDENTIFY PACKET DEVICE como
+     * 256 palavras (512 bytes). Enchemos de zeros ate ao fim.
+     *
+     * Isto NAO e' um palpite de formato: sem isto a resposta sao 64 bytes
+     * e qualquer leitura da BIOS acima da palavra 31 recebe lixo. 512 e'
+     * superseguro -- a BIOS le o Byte Count e decide quantas quer. Ver
+     * docs/25 §6.
+     */
+    while (gd_spi_buf_len < GD_IDENTIFY_SIZE) buf_u8(0x00);
     gd_taskfile_begin_response(dev, &src_buf, GD_SK_NOSE);
 }
 
