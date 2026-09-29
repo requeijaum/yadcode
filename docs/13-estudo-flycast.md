@@ -169,16 +169,23 @@ Constantes que o `fw/` já tem:
 
 | # | Questão | Como resolver |
 |---|---|---|
-| A | `0x71`: 6 bytes ou 1012? | **Sniffer num GD-ROM real.** Hardware diz 6 |
-| B | `0xA1`: o abort + blob de 80 bytes é mesmo o comportamento? | Sniffer, ou `reply_a1` do Dreamdrive (BSD-2) |
-| C | O host real usa DMA? | **Sniffer.** [06b](06b-scope-pio-vs-dma.md) |
+| **A** | `0x71`: 6 bytes ou 1012? | **Estreitada** por [25](25-opengdemu-comportamento.md) §3: 6 B é suficiente e é o que um GDEMU stock aceita. O que uma drive real põe além dos 6 continua aberto |
+| **B** | ~~`0xA1`: abort + 80 bytes?~~ **RESPONDIDA** | **Não aborta: devolve 512 bytes.** O abort está no `0xEC`, e é imposto pela ATA. [25](25-opengdemu-comportamento.md) §4 |
+| **C** | O host real usa DMA? | **Evidência forte** de [25](25-opengdemu-comportamento.md) §5: o canal de DMA da BIOS aborta a ~10 KB, o que só existe se o host usar DMA. Falta a medição directa. [06b](06b-scope-pio-vs-dma.md) |
 | D | `GET_SCD` formato 2/3 é usado por algum jogo? | Testar jogos com CD-DA |
 | E | `GD_LEADOUT_FAD = 549300` é universal? | GDI real de alta densidade |
 | **F** | ~~CRC do subcode~~ **RESOLVIDA** | **A variante complementada**: `0x1021`, init `0xFFFF`, NOT final. [20](20-shinobi-crc-subcode.md) §7. Falta medir |
 | G | `GetBaseFAD() = 45150` — usado pela BIOS como? | Dump do BIOS + rastreio |
-| **H** | **O device select `0x90`/`0xB0` deve fazer o drive deixar de responder?** | **Documentado, não implementado.** Ver [19 §5](19-kos-e-reversao-da-bios.md) |
+| **H** | **O device select `0x90`/`0xB0` deve fazer o drive deixar de responder?** | **Documentado, não implementado.** Ver [19 §5](19-kos-e-reversao-da-bios.md). O OpenGDEMU **não implementa** device select ([25](25-opengdemu-comportamento.md) §7) |
 
-**Cinco das seis que restam só se resolvem com hardware** — F resolvida pelo SDK, A/B/C/D/E/G por outro caminho. Ver [11 §4.1](11-estrategia-de-validacao.md).
+**B fecha sem hardware.** Das que restam, só A, C, D e E se resolvem com medição;
+G e H continuam sem caminho que não seja tracear a BIOS. Ver
+[11 §4.1](11-estrategia-de-validacao.md).
+
+> **Questão nova, vinda de [25](25-opengdemu-comportamento.md) §5, e a mais grave
+> que apareceu:** o canal de DMA da BIOS aborta a ~10 KB, e o primeiro read é de
+> 7 sectores (14 KB, o IP.BIN). **Um emulador que sirva `CD_READ` com latência no
+> caminho não arranca.** É requisito de firmware, não optimização.
 
 A **H** apareceu depois: o KallistiOS documenta que o GD-ROM não aceita
 os bits reservados no device select, e o firmware actual é internamente

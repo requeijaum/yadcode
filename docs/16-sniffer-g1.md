@@ -11,9 +11,9 @@ Cinco delas só se respondem observando um Dreamcast e um GD-ROM reais:
 
 | # | Pergunta | Quem tem a resposta |
 |---|----------|---------------------|
-| A | O `0x71` responde com 6 bytes ou 1012? | Nenhuma fonte permissiva |
-| B | O `0xA1` aborta e devolve os 80 bytes? | idem |
-| C | O host real usa DMA? | idem |
+| **B** | ~~O `0xA1` aborta e devolve os 80 bytes?~~ | ✅ **Respondida sem hardware** — [25](25-opengdemu-comportamento.md) §4. Não aborta: devolve 512 bytes. O abort está no `0xEC`. **Deixar de ser procurada** |
+| A | O `0x71` responde com 6 bytes ou 1012? | 🟡 Estreitada: 6 B é suficiente ([25](25-opengdemu-comportamento.md) §3). Falta o resto do buffer |
+| C | O host real usa DMA? | 🟡 Evidência forte ([25](25-opengdemu-comportamento.md) §5). Falta a contagem directa |
 | E | O lead-out é sempre 549300? | idem |
 | F | O CRC do subcode é XMODEM ou a variante complementada? | idem |
 
@@ -147,15 +147,27 @@ chutar.
 O teste 75 confirma 6 bytes em modo PIO; o teste 78 confirma 1012
 bytes em modo DMA, via Byte Count.
 
-### B — abort e tamanho da resposta ao `0xA1`
+### B — ~~abort e tamanho da resposta ao `0xA1`~~ ✅ resolvida
 
-Procura-se uma escrita do comando `0xA1` (IDENTIFY DEVICE) e a
-leitura de `ERROR` que vem a seguir. O bit ABRT (0x04) do `ERROR`
-diz se o comando foi abortado; o nibble alto traz a Sense Key, como
-define a secção 2.3 da spec (ver `GD_ERR_*` em `gd_spec.h`).
-Se não houver leitura de `ERROR`, conta-se quantas palavras DATA
-foram lidas até ao comando seguinte — ou até ao fim da captura, se o
-`0xA1` for o último comando.
+🔶 **Esta secção está obsoleta. Não a implementes na sniffer.**
+
+O estudo do OpenGDEMU ([25](25-opengdemu-comportamento.md) §4) respondeu à pergunta,
+e a hipótese estava errada: o `0xA1` **não aborta** num GD-ROM, devolve **512 bytes**
+(256 palavras, o tamanho ATAPI padrão) com `DRQ=1`. Os 80 bytes nunca existiram.
+
+O abort está no `0xEC` (IDENTIFY DEVICE), e é imposto pela ATA: *"a packet device
+shall ABRT IDENTIFY DEVICE so the host falls back to IDENTIFY PACKET DEVICE"*.
+
+**O que a sniffer passa a poder verificar** (que é mais útil do que a busca original):
+
+1. Que um `0xEC` é seguido de leitura de `ERROR` com `ABRT` (0x04) posto.
+2. Que o `0xA1` seguido devolve 512 palavras DATA.
+3. Que a **assinatura** no `LBA_LOW/MID/HIGH` é `0x81 | status` / `0x14` / `0xEB` —
+   é assim que o host distingue GD-ROM de disco, e o `0x81` é o valor de reset do
+   FPGA (o comentário do OpenGDEMU regista um bug anterior aqui, em `0x82`).
+
+Isto é mais diagnose do que procurar os 80 bytes: confirma que a BIOS **encontrou**
+o dispositivo, que é o passo que falhava.
 
 ### C — o host usa DMA?
 
